@@ -1,13 +1,20 @@
 package com.ohgiraffers.restapi.section03.valid;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.ohgiraffers.restapi.section02.responseentity.ResponseMessage;
+
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/valid")
@@ -33,14 +40,32 @@ public class ValidTestController {
 
     // 에러상황에 대해 처리할수있는 컨트롤러를 따로 만들것
     @GetMapping("/users/{userNo}")
-    public ResponseEntity<?> findUserByNo() throws UserNotFoundException {
+    public ResponseEntity<?> findUserByNo(@PathVariable int userNo) throws UserNotFoundException {
 
-        // 항상 UserNotFoundException 을 던지게 함
-        boolean check = true;
-        if(check) {
+        // Header
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(new MediaType("application", "json", Charset.forName(("UTF-8"))));
+
+        // Body
+        List<UserDTO> foundUserList = users.stream().filter(user -> user.getNo() == userNo).toList();
+
+        UserDTO foundUser = null;
+        if (foundUserList.size() > 0) {
+            // userNo 이 일치하는 회원이 있으면
+            foundUser = foundUserList.get(0);
+        } else {
             throw new UserNotFoundException("회원 정보를 찾을 수 없습니다.");
         }
 
-        return ResponseEntity.ok().build();
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("user", foundUser);
+
+        return ResponseEntity
+        .ok()
+        .headers(headers)
+        .body(new ResponseMessage(
+            200, "조회 성공", responseMap
+            )
+        );
     }
 }
